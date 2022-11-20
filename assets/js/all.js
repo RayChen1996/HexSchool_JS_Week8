@@ -97,7 +97,7 @@ function DelAllCart() {
   axios["delete"]("https://livejs-api.hexschool.io/api/livejs/v1/customer/".concat(api_path, "/carts")).then(function (response) {
     console.log(response.data); //重新渲染一次List  carts
 
-    ReRenderMyCart(response.data.carts);
+    ReRenderMyCart(response.data);
   });
 }
 
