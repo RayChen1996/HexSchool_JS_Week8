@@ -52,7 +52,7 @@ function ShowMyCart(){
 }
 
 function AddMyCart(PId){
-  console.log(`PId  ${PId}`)
+  // console.log(`PId  ${PId}`)
   axios.post(`https://livejs-api.hexschool.io/api/livejs/v1/customer/${api_path}/carts`, {
     //帶入的值會使用物件包裝
     "data": {
@@ -64,8 +64,22 @@ function AddMyCart(PId){
     // 成功會回傳的內容
     let data = response.data
     CartArr = data.carts
+    console.log(response)
     if(data.status){
       ReRenderMyCart(data)
+      Swal.fire({
+        title: '新增成功!',
+        text: '',
+        icon: 'success',
+        confirmButtonText: 'OK'
+      })
+    }else{
+      Swal.fire({
+        title: '新增失敗!',
+        text: '',
+        icon: 'error',
+        confirmButtonText: 'OK'
+      })
     }
   })
   .catch(function (error) {
@@ -93,6 +107,12 @@ function ReRenderMyCart(PDArr){
   let TotalPrice = PDArr.finalTotal
   if(PDArr.carts.length==0){
     myCartHTML += ShowEmptyTbl();
+    Swal.fire({
+      title: '操作成功!',
+      text: '購物車已清空！！',
+      icon: 'success',
+      confirmButtonText: 'OK 哩'
+    })
   }else{
     PDArr.carts.forEach((pItemObj,pIdx)=>{
       
@@ -135,6 +155,8 @@ function ReRenderMyCart(PDArr){
 
   `
   CartTbl.innerHTML = myCartHTML_TH + myCartHTML + myCartHTML_Tfoot
+ 
+
 }
 
 
@@ -146,6 +168,21 @@ function DelSingleCart(pid){
   axios.delete(`https://livejs-api.hexschool.io/api/livejs/v1/customer/${api_path}/carts/${pid}`).
     then(function (response) {
       console.log(response.data);
+      if(response.data.status){
+        Swal.fire({
+          title: '刪除成功!',
+          text: '',
+          icon: 'success',
+          confirmButtonText: 'OK'
+        })
+      }else{
+        Swal.fire({
+          title: '刪除失敗!',
+          text: '',
+          icon: 'error',
+          confirmButtonText: 'OK'
+        })
+      }
       ReRenderMyCart(response.data);
   })
 
