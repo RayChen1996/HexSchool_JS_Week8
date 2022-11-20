@@ -160,7 +160,9 @@ function DelAllCart(){
       console.log(response.data);
       //重新渲染一次List  carts
 
-      ReRenderMyCart(response.data.carts);
+      ReRenderMyCart(response.data);
+      
+      
   })
 
 }
