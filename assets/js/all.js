@@ -38,7 +38,7 @@ function ShowMyCart() {
 }
 
 function AddMyCart(PId) {
-  console.log("PId  ".concat(PId));
+  // console.log(`PId  ${PId}`)
   axios.post("https://livejs-api.hexschool.io/api/livejs/v1/customer/".concat(api_path, "/carts"), {
     //帶入的值會使用物件包裝
     "data": {
@@ -49,9 +49,23 @@ function AddMyCart(PId) {
     // 成功會回傳的內容
     var data = response.data;
     CartArr = data.carts;
+    console.log(response);
 
     if (data.status) {
       ReRenderMyCart(data);
+      Swal.fire({
+        title: '新增成功!',
+        text: '',
+        icon: 'success',
+        confirmButtonText: 'OK'
+      });
+    } else {
+      Swal.fire({
+        title: '新增失敗!',
+        text: '',
+        icon: 'error',
+        confirmButtonText: 'OK'
+      });
     }
   })["catch"](function (error) {
     // 失敗會回傳的內容
@@ -69,6 +83,12 @@ function ReRenderMyCart(PDArr) {
 
   if (PDArr.carts.length == 0) {
     myCartHTML += ShowEmptyTbl();
+    Swal.fire({
+      title: '操作成功!',
+      text: '購物車已清空！！',
+      icon: 'success',
+      confirmButtonText: 'OK 哩'
+    });
   } else {
     PDArr.carts.forEach(function (pItemObj, pIdx) {
       myCartHTML += "\n        <tr>\n          <td>\n              <div class=\"cardItem-title\">\n                  <img src=\"".concat(pItemObj.product.images, "\" alt=\"\">\n                  <p>").concat(pItemObj.product.title, "</p>\n              </div>\n          </td>\n          <td>NT$").concat(pItemObj.product.origin_price, "</td>\n          <td>1</td>\n          <td>NT$").concat(pItemObj.product.price, "</td>\n          <td class=\"discardBtn\">\n              <a onclick=DelSingleCart(\"").concat(pItemObj.id, "\") href=\"#javascript:;\" class=\"material-icons\">\n                  clear\n              </a>\n          </td>\n        </tr>  \n      ");
@@ -87,6 +107,23 @@ function DelSingleCart(pid) {
   //https://livejs-api.hexschool.io/api/livejs/v1/customer/${api_path}/carts/jw1jNknjVsKYPNyqYSWA
   axios["delete"]("https://livejs-api.hexschool.io/api/livejs/v1/customer/".concat(api_path, "/carts/").concat(pid)).then(function (response) {
     console.log(response.data);
+
+    if (response.data.status) {
+      Swal.fire({
+        title: '刪除成功!',
+        text: '',
+        icon: 'success',
+        confirmButtonText: 'OK'
+      });
+    } else {
+      Swal.fire({
+        title: '刪除失敗!',
+        text: '',
+        icon: 'error',
+        confirmButtonText: 'OK'
+      });
+    }
+
     ReRenderMyCart(response.data);
   });
 } //清除購物車內全部產品
