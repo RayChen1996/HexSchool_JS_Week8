@@ -1,58 +1,83 @@
 "use strict";
 
 $(function () {
-  GetProductList();
-  ShowMyCart();
+  getProductList();
+  showMyCart();
 });
+var list_Product = document.querySelector('.productWrap');
+var cartTbl = document.querySelector('.shoppingCart-table');
+var handleForm = document.querySelector(".orderInfo-form");
+var categorySelectChange = document.querySelector(".productSelect");
+var transactionType = document.querySelector('#tradeWay');
 var PData = [];
-var CartArr = [];
+var cartArr = [];
+var constraints = {
+  "name": {
+    presence: {
+      message: "此欄位必填!"
+    }
+  },
+  "tel": {
+    presence: {
+      message: "此欄位必填!"
+    }
+  },
+  "email": {
+    presence: {
+      message: "此欄位必填!"
+    },
+    email: true
+  },
+  "address": {
+    presence: {
+      message: "此欄位必填!"
+    }
+  }
+};
 
-function GetProductList() {
-  //https://livejs-api.hexschool.io/api/livejs/v1/customer/getproductlist/carts
-  var url = "https://livejs-api.hexschool.io/api/livejs/v1/customer/".concat(api_path, "/products"); // console.log(`GetProductList  ${api_path}`)
-
+function getProductList() {
+  var url = "".concat(BaseUrl, "/api/livejs/v1/customer/").concat(api_path, "/products");
   axios.get(url).then(function (response) {
-    // 成功會回傳的內容
-    // console.log(response);
     var data = response.data;
     PData = data.products;
-    if (data.status) RenderProductData(data.products);
+    if (data.status) renderProductData(data.products);
   })["catch"](function (error) {
     // 失敗會回傳的內容
     console.log(error);
   });
 }
 
-function ShowMyCart() {
-  // https://livejs-api.hexschool.io/api/livejs/v1/customer/raychen/carts
-  var url = "https://livejs-api.hexschool.io/api/livejs/v1/customer/".concat(api_path, "/carts");
+function showMyCart() {
+  var url = "".concat(BaseUrl, "/api/livejs/v1/customer/").concat(api_path, "/carts");
   axios.get(url).then(function (response) {
     // 成功會回傳的內容
-    console.log('我的購物車');
-    console.log(response);
-    ReRenderMyCart(response.data);
+    reRenderMyCart(response.data);
   })["catch"](function (error) {
     // 失敗會回傳的內容
     console.log(error);
   });
 }
 
-function AddMyCart(PId) {
-  // console.log(`PId  ${PId}`)
-  axios.post("https://livejs-api.hexschool.io/api/livejs/v1/customer/".concat(api_path, "/carts"), {
+function addMyCart(pId) {
+  var buyCount = 0;
+  cartArr.forEach(function (item) {
+    if (item.product.id == pId) {
+      item.quantity += 1;
+      buyCount = item.quantity;
+    }
+  });
+  axios.post("".concat(BaseUrl, "/api/livejs/v1/customer/").concat(api_path, "/carts"), {
     //帶入的值會使用物件包裝
     "data": {
-      "productId": PId,
-      "quantity": 1
+      "productId": pId,
+      "quantity": buyCount
     }
   }).then(function (response) {
     // 成功會回傳的內容
     var data = response.data;
-    CartArr = data.carts;
-    console.log(response);
 
     if (data.status) {
-      ReRenderMyCart(data);
+      reRenderMyCart(data);
       Swal.fire({
         title: '新增成功!',
         text: '',
@@ -74,40 +99,29 @@ function AddMyCart(PId) {
 } //更新我的購物車列表
 
 
-function ReRenderMyCart(PDArr) {
-  var CartTbl = document.querySelector('.shoppingCart-table'); //表頭
+function reRenderMyCart(PDArr) {
+  cartArr = PDArr.carts; //表頭
 
   var myCartHTML_TH = "\n      <tr>\n        <th width=\"40%\">\u54C1\u9805</th>\n        <th width=\"15%\">\u55AE\u50F9</th>\n        <th width=\"15%\">\u6578\u91CF</th>\n        <th width=\"15%\">\u91D1\u984D</th>\n        <th width=\"15%\"></th>\n      </tr>\n\n  ";
   var myCartHTML = "";
-  var TotalPrice = PDArr.finalTotal;
+  var totalPrice = PDArr.finalTotal;
 
   if (PDArr.carts.length == 0) {
     myCartHTML += ShowEmptyTbl();
-    Swal.fire({
-      title: '操作成功!',
-      text: '購物車已清空！！',
-      icon: 'success',
-      confirmButtonText: 'OK 哩'
-    });
   } else {
     PDArr.carts.forEach(function (pItemObj, pIdx) {
-      myCartHTML += "\n        <tr>\n          <td>\n              <div class=\"cardItem-title\">\n                  <img src=\"".concat(pItemObj.product.images, "\" alt=\"\">\n                  <p>").concat(pItemObj.product.title, "</p>\n              </div>\n          </td>\n          <td>NT$").concat(pItemObj.product.origin_price, "</td>\n          <td>1</td>\n          <td>NT$").concat(pItemObj.product.price, "</td>\n          <td class=\"discardBtn\">\n              <a onclick=DelSingleCart(\"").concat(pItemObj.id, "\") href=\"#javascript:;\" class=\"material-icons\">\n                  clear\n              </a>\n          </td>\n        </tr>  \n      ");
+      myCartHTML += "\n        <tr>\n          <td>\n              <div class=\"cardItem-title\">\n                  <img src=\"".concat(pItemObj.product.images, "\" alt=\"\">\n                  <p>").concat(pItemObj.product.title, "</p>\n              </div>\n          </td>\n          <td>NT$").concat(pItemObj.product.price, "</td>\n          <td>").concat(pItemObj.quantity, "</td>\n          <td>NT$").concat(pItemObj.product.price * pItemObj.quantity, "</td>\n          <td class=\"discardBtn\">\n              <a onclick=delSingleCart(\"").concat(pItemObj.id, "\") href=\"#javascript:;\" class=\"material-icons\">\n                  clear\n              </a>\n          </td>\n        </tr>  \n      ");
     });
   } //表尾
 
 
-  var myCartHTML_Tfoot = "\n    <tr>\n      <td>\n          <a href=\"#javascript:;\" onclick='DelAllCart();' class=\"discardAllBtn\">\u522A\u9664\u6240\u6709\u54C1\u9805</a>\n      </td>\n      <td colspan=\"2\"></td>\n\n      <td>\n          <p>\u7E3D\u91D1\u984D</p>\n      </td>\n      <td>NT$".concat(TotalPrice, "</td>\n    </tr>\n\n  ");
-  CartTbl.innerHTML = myCartHTML_TH + myCartHTML + myCartHTML_Tfoot;
+  var myCartHTML_Tfoot = "\n    <tr>\n      <td>\n          <a href=\"#javascript:;\" onclick='delAllCart();' class=\"discardAllBtn\">\u522A\u9664\u6240\u6709\u54C1\u9805</a>\n      </td>\n      <td colspan=\"2\"></td>\n\n      <td>\n          <p>\u7E3D\u91D1\u984D</p>\n      </td>\n      <td>NT$".concat(totalPrice, "</td>\n    </tr>\n\n  ");
+  cartTbl.innerHTML = myCartHTML_TH + myCartHTML + myCartHTML_Tfoot;
 } // 刪除購物車內特定產品
 
 
-function DelSingleCart(pid) {
-  //'https://livejs-api.hexschool.io/api/livejs/v1/customer/raychen/carts/jw1jNknjVsKYPNyqYSWA'
-  // console.log(`delete at  ${pid}`)
-  //https://livejs-api.hexschool.io/api/livejs/v1/customer/${api_path}/carts/jw1jNknjVsKYPNyqYSWA
-  axios["delete"]("https://livejs-api.hexschool.io/api/livejs/v1/customer/".concat(api_path, "/carts/").concat(pid)).then(function (response) {
-    console.log(response.data);
-
+function delSingleCart(pid) {
+  axios["delete"]("".concat(BaseUrl, "/api/livejs/v1/customer/").concat(api_path, "/carts/").concat(pid)).then(function (response) {
     if (response.data.status) {
       Swal.fire({
         title: '刪除成功!',
@@ -124,62 +138,63 @@ function DelSingleCart(pid) {
       });
     }
 
-    ReRenderMyCart(response.data);
+    reRenderMyCart(response.data);
   });
 } //清除購物車內全部產品
 
 
-function DelAllCart() {
-  //https://livejs-api.hexschool.io/api/livejs/v1/customer/raychen/carts
-  axios["delete"]("https://livejs-api.hexschool.io/api/livejs/v1/customer/".concat(api_path, "/carts")).then(function (response) {
-    console.log(response.data); //重新渲染一次List  carts
-
-    ReRenderMyCart(response.data);
-  });
-}
-
-function AddPresertData() {
-  // console.log($("#tradeWay").val())
-  //https://livejs-api.hexschool.io/api/livejs/v1/customer/raychen/orders
-  axios.post("https://livejs-api.hexschool.io/api/livejs/v1/customer/".concat(api_path, "/orders"), {
-    //帶入的值會使用物件包裝
-    "data": {
-      "user": {
-        "name": document.getElementById("customerName"),
-        "tel": document.getElementById("customerPhone"),
-        "email": document.getElementById("customerEmail"),
-        "address": document.getElementById("customerAddress"),
-        "payment": $("#tradeWay").val()
-      }
-    }
-  }).then(function (response) {
-    // 成功會回傳的內容
-    var data = response.data;
-    console.log(response);
+function delAllCart() {
+  axios["delete"]("".concat(BaseUrl, "/api/livejs/v1/customer/").concat(api_path, "/carts")).then(function (response) {
+    //重新渲染一次List  carts
+    reRenderMyCart(response.data);
   })["catch"](function (error) {
     // 失敗會回傳的內容
     console.log(error);
   });
 }
 
-var CaegorySelectChange = document.querySelector(".productSelect");
-CaegorySelectChange.addEventListener("change", function (e) {
-  console.log(e.target.value);
+function addPresertData() {
+  var currentOpt = transactionType.options[transactionType.selectedIndex];
+  var error = validate({
+    email: document.getElementById("customerEmail").value,
+    name: document.getElementById("customerName").value,
+    address: document.getElementById("customerEmail").value,
+    tel: document.getElementById("customerPhone").value
+  }, constraints);
 
+  if (error == undefined) {
+    //表示驗證通過
+    axios.post("".concat(BaseUrl, "/api/livejs/v1/customer/").concat(api_path, "/orders"), {
+      //帶入的值會使用物件包裝
+      "data": {
+        "user": {
+          "name": document.getElementById("customerName").value,
+          "tel": document.getElementById("customerPhone").value,
+          "email": document.getElementById("customerEmail").value,
+          "address": document.getElementById("customerAddress").value,
+          "payment": currentOpt.value
+        }
+      }
+    }).then(function (response) {
+      // 成功會回傳的內容
+      var data = response.data;
+    })["catch"](function (error) {
+      // 失敗會回傳的內容
+      console.log(error);
+    });
+  } else {}
+}
+
+categorySelectChange.addEventListener("change", function (e) {
   if (e.target.value == "全部") {
-    RenderProductData(PData);
+    renderProductData(PData);
   } else {
-    RenderProductData(FilterProduct(e.target.value));
+    renderProductData(FilterProduct(e.target.value));
   }
-}); // let SubmitPresertOrrder = document.querySelector(".orderInfo-btn")
-// SubmitPresertOrrder.addEventListener("click",()=>{
-//   AddPresertData()
-// })
-
-var handleForm = document.querySelector(".orderInfo-form");
+});
 handleForm.addEventListener("submit", function (e) {
   e.preventDefault();
-  AddPresertData();
+  addPresertData();
 });
 
 function FilterProduct(qCategory) {
@@ -188,14 +203,30 @@ function FilterProduct(qCategory) {
   });
 }
 
-function RenderProductData(ProductArr) {
-  console.log(ProductArr);
+function renderProductData(productArr) {
   var HTMLStr = "";
-  var list_Product = document.querySelector('.productWrap');
-  ProductArr.forEach(function (item, index) {
-    HTMLStr += "\n    <li class=\"productCard\">\n                <h4 class=\"productType\">".concat(item.category, "</h4>\n                <img src=\"").concat(item.images, "\" alt=\"\">\n                <a href=\"#javascript:;\"  class=\"addCardBtn\" onclick=AddMyCart(\"").concat(item.id, "\") data-pid=\"").concat(item.id, "\" >\u52A0\u5165\u8CFC\u7269\u8ECA</a>\n                <h3>").concat(item.title, "</h3>\n                <del class=\"originPrice\">NT").concat(item.origin_price, "</del>\n                <p class=\"nowPrice\">NT").concat(item.price, "</p>\n            </li>\n    ");
+  productArr.forEach(function (item, index) {
+    HTMLStr += "\n    <li class=\"productCard\">\n                <h4 class=\"productType\">".concat(item.category, "</h4>\n                <img src=\"").concat(item.images, "\" alt=\"\">\n                <a href=\"#javascript:;\"  class=\"addCardBtn\" onclick=addMyCart(\"").concat(item.id, "\") data-pid=\"").concat(item.id, "\" >\u52A0\u5165\u8CFC\u7269\u8ECA</a>\n                <h3>").concat(item.title, "</h3>\n                <del class=\"originPrice\">NT").concat(item.origin_price, "</del>\n                <p class=\"nowPrice\">NT").concat(item.price, "</p>\n            </li>\n    ");
   });
   list_Product.innerHTML = HTMLStr;
+} //將SweetAlert封裝
+
+
+function ShowToast(title, text, isSuccess, confirmButton) {
+  var iconMsg = '';
+
+  if (isSuccess) {
+    iconMsg = 'success';
+  } else {
+    iconMsg = 'error';
+  }
+
+  Swal.fire({
+    title: title,
+    text: text,
+    icon: iconMsg,
+    confirmButtonText: confirmButton
+  });
 } //秀空白td
 
 
@@ -206,4 +237,5 @@ function ShowEmptyTbl() {
 
 var api_path = 'raychen';
 var token = "zjRahQTiUTdZHg18y4XB5gv1Ort2";
+var BaseUrl = "https://livejs-api.hexschool.io";
 //# sourceMappingURL=all.js.map
